@@ -9,13 +9,51 @@ class NeuralNetwork(val inputSize: Int, val outputSize: Int) {
         Linear(100, outputSize),
         ReLU()
     ))
-    /*fun train(inputDataset: List<DoubleArray>, inputTarget: List<Double>, learningRate: Double = 0.1) {
-        val dataset = listOf<Matrix>()
-        for (input in dataset) {
-            model.forward(input)
+    fun train(
+        input: List<DoubleArray>,
+        target: List<DoubleArray>,
+        learningRate: Double,
+        epochs: Int,
+    ): List<Double>
+    /* returns LOSS for each epoch */
+    {
+        if (input.size != target.size) {
+            throw Exception("Number of inputs and targets must match")
         }
+        input.forEach { if (it.size != inputSize) throw Exception("Incorrect input vector size") }
+        target.forEach { if (it.size != outputSize) throw Exception("Incorrect target vector size") }
 
-    }*/
+        val optimizer = GradientOptimizer(model.parameters(), learningRate)
+        val lossFunction = MSELoss()
+        val lossHistory = mutableListOf<Double>()
+        for (epoch in 1 until epochs + 1) {
+            var loss = 0.0
+            for (i in 0 until input.size) {
+                val inputData = vectorToMatrix(input[i])
+                val outputTarget = vectorToMatrix(target[i])
+                val outputData = model.forward(inputData)
+                loss += lossFunction.value(outputData, outputTarget)
+                val gradient = lossFunction.gradient(outputData, outputTarget)
+                model.backward(gradient)
+                optimizer.step()
+                optimizer.zeroGrad()
+            }
+            lossHistory.add(loss / input.size)
+        }
+        return lossHistory
+    }
+    fun predict(input: DoubleArray): DoubleArray {
+        val inputData = vectorToMatrix(input)
+        val outputData = model.forward(inputData)
+        return outputData.matrix[0]
+    }
+    private fun vectorToMatrix(vector: DoubleArray): Matrix {
+        val result = Matrix(Pair(1, vector.size))
+        for (j in 0 until vector.size) {
+            result.matrix[0][j] = vector[j]
+        }
+        return result
+    }
 }
 
 private class Matrix {
