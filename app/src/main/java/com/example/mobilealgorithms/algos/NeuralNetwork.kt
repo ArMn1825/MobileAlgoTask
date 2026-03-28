@@ -137,7 +137,7 @@ private class Linear (height: Int, width: Int) : NNModule() {
 }
 
 private class ReLU : NNModule() {
-    var inputData: Matrix? = null
+    private var inputData: Matrix? = null
     override fun forward(inputData: Matrix): Matrix {
         this.inputData = inputData
         return Matrix.map(inputData) { if(it < 0) 0.0 else it }
@@ -163,13 +163,38 @@ private class Sequential(val layers: List<NNModule>) : NNModule() {
         }
         return outputData
     }
-
     override fun backward(outputGrad: Matrix): Matrix {
         var inputGrad = outputGrad
-        for (i in layers.size downTo 0) {
+        for (i in layers.size - 1 downTo 0) {
             inputGrad = layers[i].backward(inputGrad)
         }
         return inputGrad
     }
     override fun parameters(): List<NNParameters> { return layers.flatMap { it.parameters() } }
+    override fun zeroGrad() {
+        layers.forEach { it.zeroGrad() }
+    }
+}
+
+private class MSELoss
+{
+    fun value(outputData: Matrix, outputTarget: Matrix) : Double
+    {
+        var result = 0.0
+        for (j in 0 until outputData.getSize().second) {
+            result += (outputData.matrix[0][j] - outputTarget.matrix[0][j]) *
+                      (outputData.matrix[0][j] - outputTarget.matrix[0][j])
+        }
+        result /= outputData.getSize().second
+        return result
+    }
+    fun gradient(outputData: Matrix, outputTarget: Matrix) : Matrix {
+        /* grad = 2*(output - target)/N */
+        val result = Matrix(outputData.getSize())
+        for (j in 0 until outputData.getSize().second) {
+            result.matrix[0][j] = 2*(outputData.matrix[0][j] - outputTarget.matrix[0][j]) /
+                                  outputData.getSize().second
+        }
+        return result
+    }
 }
