@@ -30,6 +30,23 @@ private class Matrix {
             if (fillRandom) Random.nextDouble(-0.5, 0.5) else 0.0
         } }
     }
+    fun fillZeros() {
+        for (i in 0 until size.first) {
+            for (j in 0 until size.second) {
+                this.matrix[i][j] = 0.0
+            }
+        }
+    }
+    fun add(other: Matrix) {
+        if (this.size.first != other.size.first || this.size.second != other.size.second) {
+            throw Exception("Incorrect matrix size")
+        }
+        for (i in 0 until size.first) {
+            for (j in 0 until size.second) {
+                this.matrix[i][j] += other.matrix[i][j]
+            }
+        }
+    }
     companion object {
         fun copy(m: Matrix) : Matrix {
             val result = Matrix(m.size)
@@ -113,10 +130,8 @@ private class Linear (height: Int, width: Int) : NNModule() {
                       NNParameters(bias, biasGrad))
     }
     override fun zeroGrad() {
-        for (line in weightsGrad.matrix) {
-            line.fill(0.0)
-        }
-        biasGrad.matrix[0].fill(0.0)
+        weightsGrad.fillZeros()
+        biasGrad.fillZeros()
     }
     override fun backward(outputGrad: Matrix): Matrix {
         val inputGrad = Matrix.mul(outputGrad, weights)
@@ -130,8 +145,8 @@ private class Linear (height: Int, width: Int) : NNModule() {
                 biasGrad.matrix[0][j] += outputGrad.matrix[i][j]
             }
         }
-        this.weightsGrad = Matrix.add(this.weightsGrad, weightsGrad)
-        this.biasGrad = Matrix.add(this.biasGrad, biasGrad)
+        this.weightsGrad.add(weightsGrad)
+        this.biasGrad.add(biasGrad)
         return inputGrad
     }
 }
@@ -196,5 +211,16 @@ private class MSELoss
                                   outputData.getSize().second
         }
         return result
+    }
+}
+
+private class GradientOptimizer(val parameters: List<NNParameters>, val learningRate: Double) {
+    fun step() {
+        for (parameter in parameters) {
+            parameter.values.add(Matrix.map(parameter.gradient) { -it*learningRate })
+        }
+    }
+    fun zeroGrad() {
+        parameters.forEach { it.gradient.fillZeros() }
     }
 }
