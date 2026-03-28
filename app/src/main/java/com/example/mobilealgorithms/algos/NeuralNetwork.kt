@@ -2,13 +2,26 @@ package com.example.mobilealgorithms.algos
 
 import kotlin.random.Random
 
-class NeuralNetwork {
+class NeuralNetwork(val inputSize: Int, val outputSize: Int) {
+    private val model = Sequential(listOf(
+        Linear(inputSize, 100),
+        ReLU(),
+        Linear(100, outputSize),
+        ReLU()
+    ))
+    /*fun train(inputDataset: List<DoubleArray>, inputTarget: List<Double>, learningRate: Double = 0.1) {
+        val dataset = listOf<Matrix>()
+        for (input in dataset) {
+            model.forward(input)
+        }
+
+    }*/
 }
 
 private class Matrix {
-    public val matrix: Array<DoubleArray>
+    val matrix: Array<DoubleArray>
     private val size: Pair<Int, Int>
-    public fun getSize(): Pair<Int, Int>  {
+    fun getSize(): Pair<Int, Int>  {
         return Pair(size.first, size.second)
     }
     constructor(size: Pair<Int, Int>, fillRandom: Boolean = false) {
@@ -75,12 +88,12 @@ private class Matrix {
     }
 }
 
-private data class NNParameters(val values: Matrix, val gradient: Matrix) {}
+private data class NNParameters(val values: Matrix, val gradient: Matrix)
 private abstract class NNModule {
     abstract fun forward(inputData: Matrix) : Matrix
     abstract fun backward(outputGrad: Matrix) : Matrix
-    abstract fun zeroGrad()
-    abstract fun parameters() : List<NNParameters>
+    open fun zeroGrad() {}
+    open fun parameters() : List<NNParameters> { return emptyList() }
 }
 
 private class Linear (height: Int, width: Int) : NNModule() {
@@ -121,4 +134,42 @@ private class Linear (height: Int, width: Int) : NNModule() {
         this.biasGrad = Matrix.add(this.biasGrad, biasGrad)
         return inputGrad
     }
+}
+
+private class ReLU : NNModule() {
+    var inputData: Matrix? = null
+    override fun forward(inputData: Matrix): Matrix {
+        this.inputData = inputData
+        return Matrix.map(inputData) { if(it < 0) 0.0 else it }
+    }
+    override fun backward(outputGrad: Matrix): Matrix {
+        val inputGrad = Matrix.copy(outputGrad)
+        for (i in 0 until inputGrad.getSize().first) {
+            for (j in 0 until inputGrad.getSize().second) {
+                if (this.inputData!!.matrix[i][j] < 0) {
+                    inputGrad.matrix[i][j] = 0.0
+                }
+            }
+        }
+        return inputGrad
+    }
+}
+
+private class Sequential(val layers: List<NNModule>) : NNModule() {
+    override fun forward(inputData: Matrix): Matrix {
+        var outputData = inputData
+        for (layer in layers) {
+            outputData = layer.forward(outputData)
+        }
+        return outputData
+    }
+
+    override fun backward(outputGrad: Matrix): Matrix {
+        var inputGrad = outputGrad
+        for (i in layers.size downTo 0) {
+            inputGrad = layers[i].backward(inputGrad)
+        }
+        return inputGrad
+    }
+    override fun parameters(): List<NNParameters> { return layers.flatMap { it.parameters() } }
 }
