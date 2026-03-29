@@ -6,12 +6,12 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material3.Button
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.Icon
@@ -32,6 +32,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Menu
 
 import com.example.mobilealgorithms.screens.*
 
@@ -55,8 +57,8 @@ fun AppNavigationMenu(screenLabel: String, screenContent: @Composable () -> Unit
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            Row(Modifier.fillMaxSize()) {
-                Column(Modifier.weight(0.4f)
+            Row(Modifier.fillMaxSize().statusBarsPadding()) {
+                Column(Modifier.weight(0.4f).fillMaxHeight()
                     .background(Color.White).alpha(1f)
                     .padding(16.dp))
                 {
@@ -73,12 +75,12 @@ fun AppNavigationMenu(screenLabel: String, screenContent: @Composable () -> Unit
                         }
                     }
                 }
-                Column(Modifier.weight(0.6f).alpha(0f)) {}
+                Column(Modifier.weight(0.6f).fillMaxHeight().alpha(0f)) {}
             }
         },
         scrimColor = Color(0f, 0f, 0f, 0f),
         content = {
-            Column() {
+            Column(Modifier.statusBarsPadding()) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = {
                         scope.launch {drawerState.open()} }) {
@@ -93,7 +95,6 @@ fun AppNavigationMenu(screenLabel: String, screenContent: @Composable () -> Unit
     )
 }
 class MainActivity : ComponentActivity() {
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
